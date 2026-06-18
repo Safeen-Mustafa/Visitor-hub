@@ -264,6 +264,7 @@
     </div>
 
     <div class="thankyou" id="thankyou">noted.</div>
+    <div id="debug" style="position:fixed;bottom:10px;left:10px;right:10px;background:rgba(0,0,0,0.8);color:#fff;font-size:11px;padding:8px;border-radius:6px;z-index:9999;display:none;word-break:break-all;"></div>
   </main>
 
 </div>
@@ -321,20 +322,30 @@
   async function fetchVisitors() {
     try {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + TABLE + '?select=id&order=id.asc', { headers });
-      if (!res.ok) { console.error('fetch failed', res.status, await res.text()); return []; }
-      return await res.json();
-    } catch(e) { console.error('fetch error', e); return []; }
+      const txt = await res.text();
+      if (!res.ok) { showDebug('FETCH FAIL ' + res.status + ': ' + txt); return []; }
+      return JSON.parse(txt);
+    } catch(e) { showDebug('FETCH ERROR: ' + e.message); return []; }
+  }
+
+  function showDebug(msg) {
+    const d = document.getElementById('debug');
+    d.style.display = 'block';
+    d.textContent = msg;
   }
 
   async function insertVisitor() {
     try {
+      showDebug('Inserting...');
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + TABLE, {
         method: 'POST',
         headers: { ...headers, 'Prefer': 'return=minimal' },
         body: JSON.stringify({ created_at: new Date().toISOString() })
       });
-      if (!res.ok) { console.error('insert failed', res.status, await res.text()); }
-    } catch(e) { console.error('insert error', e); }
+      const txt = await res.text();
+      if (!res.ok) { showDebug('INSERT FAIL ' + res.status + ': ' + txt); }
+      else { showDebug('Insert OK!'); }
+    } catch(e) { showDebug('INSERT ERROR: ' + e.message); }
   }
 
   function renderBoard(rows) {
